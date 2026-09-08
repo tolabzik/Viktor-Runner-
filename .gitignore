@@ -1,0 +1,10 @@
+.env
+data/
+backups/
+__pycache__/
+*.py[cod]
+*.sqlite3*
+.session-key
+.venv/
+node_modules/
+tests/artifacts/
