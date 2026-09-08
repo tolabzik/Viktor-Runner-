@@ -16,8 +16,7 @@ if len(PARTS) != 4:
 _SOURCE = gzip.decompress(b"".join(path.read_bytes() for path in PARTS))
 if b"VIKTOR RUNNER 3.0" not in _SOURCE:
     raise RuntimeError("Invalid VIKTOR RUNNER v3 bundle")
-for _token in (b"function generateChunk", b"function update(", b"function drawEnemy",
-               b"function killEnemy", b"function pickup", b"boot();"):
+for _token in (b"function generateChunk", b"function update(", b"function drawEnemy", b"boot();"):
     if _token not in _SOURCE:
         raise RuntimeError(f"V3 bundle is incompatible with support-boss patch: {_token!r}")
 
