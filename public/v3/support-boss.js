@@ -44,10 +44,4 @@ ASSET_DATA.supportBoss='assets/support-boss.webp';
    if(e.bubbleTime>0&&e.bubble){const bw=Math.min(205,Math.max(128,e.bubble.length*5.3));round(e.w/2-bw/2,-70,bw,25,7,'#f4edf1','#ffbed388');text(e.bubble,e.w/2,-53,10,'#382c34',700,'center');}
    text('БОСС · ПОДДЕРЖКА',e.w/2,e.h+21,8,'#ffd0df',900,'center');ctx.restore();
  };
- const __supportBossKillEnemy=killEnemy;
- killEnemy=function(e,stomp=false){
-   const boss=e&&e.type==='supportBoss'&&!e.dead;
-   __supportBossKillEnemy(e,stomp);
-   if(boss&&e.dead){pickup('grow',e.x+e.w*.45,e.y+20,{vy:-220,falling:true});pickup('sidejob',e.x+e.w*.7,e.y+30,{vy:-170,falling:true});notify('ПОДДЕРЖКА ПРОЙДЕНА','Босс оставила премию и шабашку',2.5);}
- };
 }
