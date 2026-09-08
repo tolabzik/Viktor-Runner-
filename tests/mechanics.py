@@ -26,7 +26,8 @@ with sync_playwright() as p:
  reset();t.collect('coffee');t.hurt();assert('Coffee grants invulnerability',t.game.player.hp===3&&t.game.player.coffee===8);
  reset();t.game.player.hp=1;t.collect('heart');assert('Health pickup',t.game.player.hp===2);
  reset();t.game.coins=98;t.game.player.hp=2;const bonus={type:'bonus',x:500,y:300,content:'coin',used:false};t.hitBlock(bonus);assert('Crossing 100 coins grants health',t.game.player.hp===3&&t.game.coins===103);
- reset();for(let i=0;i<4;i++){t.selectWeapon(i);const before=t.game.player.ammo[i];t.shoot();assert('Weapon '+(i+1)+' creates projectiles',t.game.bullets.some(b=>b.weapon===i));if(i>0)assert('Weapon '+(i+1)+' uses one ammo',t.game.player.ammo[i]===before-1);}
+ reset();for(let i=0;i<3;i++){t.selectWeapon(i);const before=t.game.player.ammo[i];t.shoot();assert('Ranged weapon '+(i+1)+' creates projectile',t.game.bullets.some(b=>b.weapon===i));if(Number.isFinite(before))assert('Finite weapon '+(i+1)+' uses one ammo',t.game.player.ammo[i]===before-1);}
+ t.selectWeapon(3);const shots=t.game.shots;t.shoot();assert('Mop is melee and infinite',t.game.shots===shots+1&&t.game.player.melee>0&&!Number.isFinite(t.game.player.ammo[3]));
  t.selectWeapon(1);t.game.player.ammo[1]=0;t.shoot();assert('Empty weapon falls back to pistol',t.game.player.weapon===0);
  reset();t.game.enemies=[{type:'bot',x:410,y:544,w:46,h:44,hp:1,maxhp:1,origin:410,vx:0,phase:0,timer:10,hurt:0,dead:false}];t.shoot();frames(35);assert('Projectile kills enemy',t.game.kills===1,{kills:t.game.kills});
  reset();t.game.enemies=[{type:'bot',x:200,y:544,w:46,h:44,hp:1,maxhp:1,origin:200,vx:0,phase:0,timer:10,hurt:0,dead:false}];t.game.player.y=544-t.game.player.h-2;t.game.player.vy=250;frames(3);assert('Stomp bounces and kills',t.game.kills===1&&t.game.player.vy<0);
@@ -34,9 +35,12 @@ with sync_playwright() as p:
  reset();t.resize(1,true);assert('Crouch reduces collision height',t.game.player.h===72);t.resize(1,false);assert('Stand restores collision height',t.game.player.h===118);
  reset();const paper={type:'paper',x:400,y:370,w:46,h:46,dead:false};t.game.blocks.push(paper);t.collect('grow');t.hitBlock(paper);assert('Big Viktor breaks boxes',paper.dead===true);
  reset();const p=t.game.player;p.y=1000;t.step(1/120);assert('Pit costs health and respawns safely',p.hp===2&&p.y<588&&t.state==='playing');
- reset();t.game.player.hp=1;t.game.player.inv=0;t.hurt(true);assert('Last health ends run',t.state==='over');t.start();assert('Restart resets counters and ammo',t.game.dist===0&&t.game.coins===0&&t.game.player.ammo[1]===90);
+ reset();t.game.player.hp=1;t.game.player.inv=0;t.hurt(true);assert('Last health ends run',t.state==='over');t.start();assert('Restart resets counters and ammo',t.game.dist===0&&t.game.coins===0&&t.game.player.ammo[1]===90&&t.game.player.ammo[2]===24&&!Number.isFinite(t.game.player.ammo[3]));
  t.pause();assert('Pause changes state',t.state==='paused');t.pause();assert('Resume changes state',t.state==='playing');
- reset();t.teleport(20000);t.step(1/120);assert('Procedural generation reaches all 5 sectors',t.game.sector===4&&t.game.generated>20000+1280,{sector:t.game.sector,generated:t.game.generated});
+ reset();t.input.stop=true;frames(60);assert('Stop command brakes Viktor',t.game.player.vx<5,{vx:t.game.player.vx});t.input.stop=false;frames(30);assert('Releasing stop resumes run',t.game.player.vx>100,{vx:t.game.player.vx});
+ reset();const first=t.themeIndex();t.cycleLocation();assert('Elevator cycles IRI location',t.themeIndex()!==first,{before:first,after:t.themeIndex()});
+ reset();t.generateChunk(3360,3);assert('Support boss appears at location boundary',t.game.enemies.some(e=>e.type==='supportBoss'&&e.hp===8));
+ reset();t.teleport(20000);t.step(1/120);assert('Procedural generation advances sectors',t.game.sector===4&&t.game.generated>20000+1280,{sector:t.game.sector,generated:t.game.generated});
  return results;
 }''')
  print(json.dumps(results,ensure_ascii=False,indent=2))

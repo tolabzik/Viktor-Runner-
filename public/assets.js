@@ -1,5 +1,5 @@
 /* Body layers are clipped from the supplied photograph, without external assets. */
-const ASSET_DATA = { hero: 'assets/hero.webp' };
+const ASSET_DATA = { hero: 'assets/hero.webp', boss: 'assets/support-boss.webp', iriLogo: 'assets/iri-logo.webp' };
 window.ViktorSprites = {
  prepare(assets) {
   const image=assets.hero;

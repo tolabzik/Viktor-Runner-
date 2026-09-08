@@ -2,10 +2,10 @@
 (() => {
 'use strict';
 let h;
-const specs={cleaner:[68,96,2],guard:[72,108,5],smm:[62,99,2]};
-const names={cleaner:'УБОРЩИЦА',guard:'ОХРАННИК',smm:'SMM-МЕНЕДЖЕР'};
-const reasons={cleaner:'Виктор наступил на только что вымытый пол.',guard:'Пропуск есть. Согласования на выход — нет.',smm:'Виктора задержали на съёмку корпоративного рилса.'};
-const lines={cleaner:['Я только помыла!','Ноги! У меня тут KPI.','Обходите через отпуск.','Бахилы где, Виктор?'],guard:['Пропуск предъявите!','Выход по согласованию.','А ноутбук чей?','Без заявки не выпущу.'],smm:['Виктор, снимем рилс!','Улыбнись для контента!','Ещё дубль. Последний.','Нам нужен живой охват!']};
+const specs={cleaner:[68,96,2],guard:[72,108,5],smm:[62,99,2],supportBoss:[118,148,8]};
+const names={cleaner:'УБОРЩИЦА',guard:'ОХРАННИК',smm:'SMM-МЕНЕДЖЕР',supportBoss:'БОСС · ПОДДЕРЖКА'};
+const reasons={cleaner:'Виктор наступил на только что вымытый пол.',guard:'Пропуск есть. Согласования на выход — нет.',smm:'Виктора задержали на съёмку корпоративного рилса.',supportBoss:'Поддержка отправила Виктора на дополнительное согласование.'};
+const lines={cleaner:['Я только помыла!','Ноги! У меня тут KPI.','Обходите через отпуск.','Бахилы где, Виктор?'],guard:['Пропуск предъявите!','Выход по согласованию.','А ноутбук чей?','Без заявки не выпущу.'],smm:['Виктор, снимем рилс!','Улыбнись для контента!','Ещё дубль. Последний.','Нам нужен живой охват!'],supportBoss:['Заявка принята. Бежать поздно.','Сейчас будет первая линия!','Перезагружал? Не помогло?','Поддержка уже в пути.']};
 const jokes=[
 'Срочно — это когда письмо ещё не написали, а ответ уже нужен.',
 'Это могло быть письмом. Но стало совещанием.',
@@ -31,17 +31,24 @@ const jokes=[
 'Нам нужен проактивный отдых после работы.',
 'За переработки начислены новые переработки.',
 'Не баг, а корпоративная особенность.'];
-const signs=['КОФЕ НЕ ТРОГАТЬ','ПРОД ДЕРЖИТСЯ','ЗАЯВКА В РАБОТЕ','СРОЧНО ДО ВЧЕРА','ТИШЕ: ИДЁТ СОЗВОН','ПЯТНИЦА НЕ СПАСЁТ','ТЗ БУДЕТ ПОТОМ','ВЫХОД ПО ЗАЯВКЕ','СОГЛАСУЙ СОГЛАСОВАНИЕ'];
+const signs=['ИРИ · 5 ЭТАЖ','ИРИ · 6 ЭТАЖ','ПЕРЕГОВОРКИ →','КОФЕ НЕ ТРОГАТЬ','ПРОД ДЕРЖИТСЯ','ЗАЯВКА В РАБОТЕ','СРОЧНО ДО ВЧЕРА','ТИШЕ: ИДЁТ СОЗВОН','ПЯТНИЦА НЕ СПАСЁТ','ТЗ БУДЕТ ПОТОМ','ВЫХОД ПО ЗАЯВКЕ','СОГЛАСУЙ СОГЛАСОВАНИЕ'];
 function safeReward(g,kind,x){if(!g.grounds.some(s=>x>s.x+24&&x<s.x+s.w-24))return;let top=h.FLOOR;for(const s of g.solids)if(x>s.x-20&&x<s.x+s.w+20)top=Math.min(top,s.y);h.pickup(kind,x,top-64);}
 function populate(g,x,index){
  if(index===0){safeReward(g,'sidejob',x+425);return;}
  const candidates=g.enemies.filter(e=>e.origin>=x&&e.origin<x+1120&&e.type!=='drone');
- if(candidates.length&&(index<=3||h.random()<.78)){const e=candidates.at(-1),kind=index<=3?['cleaner','guard','smm'][index-1]:h.choose(Object.keys(specs));const [w,height,hp]=specs[kind];Object.assign(e,{type:kind,w,h:height,hp,maxhp:hp,y:h.FLOOR-height,baseY:h.FLOOR-height,timer:1+h.random(),bubbleTime:0,dash:0,warning:0});}
+ if(candidates.length&&(index<=3||h.random()<.78)){const e=candidates.at(-1),regular=['cleaner','guard','smm'],kind=index<=3?regular[index-1]:h.choose(regular);const [w,height,hp]=specs[kind];Object.assign(e,{type:kind,w,h:height,hp,maxhp:hp,y:h.FLOOR-height,baseY:h.FLOOR-height,timer:1+h.random(),bubbleTime:0,dash:0,warning:0});}
+ // A light recurring boss closes each office location. Eight HP and slow attacks keep it approachable.
+ if(index>=3&&index%4===3){h.enemy('supportBoss',x+850);const boss=g.enemies.at(-1);Object.assign(boss,{vx:-8,timer:1.4,bubbleTime:0,warning:0,swing:0,origin:x+850});h.sign(x+690,'ПОДДЕРЖКА ВПЕРЕДИ','danger');}
  if(index%2===0)safeReward(g,'sidejob',x+400);if(index%3===0)safeReward(g,'grow',x+945);if(index%2===1)h.sign(x+65,h.choose(signs),'normal');
 }
 function say(e){e.bubble=h.choose(lines[e.type]);e.bubbleTime=2.4;}
 function tickEnemy(e,g,p,dt){
- if(!specs[e.type])return;e.bubbleTime=Math.max(0,(e.bubbleTime||0)-dt);const distance=e.x-p.x;if(distance< -170||distance>680)return;
+ if(!specs[e.type])return;e.bubbleTime=Math.max(0,(e.bubbleTime||0)-dt);e.swing=Math.max(0,(e.swing||0)-dt);const distance=e.x-p.x;if(distance< -170||distance>680)return;
+ if(e.type==='supportBoss'){
+   if(e.warning>0){e.warning-=dt;if(e.warning<=0){e.swing=.42;const sy=e.y+67,a=Math.atan2(p.y+p.h*.55-sy,p.x-e.x);g.enemyBullets.push({x:e.x+18,y:sy,w:28,h:14,vx:Math.cos(a)*205,vy:Math.sin(a)*205,life:3.5,rotation:0,kind:'batwave'});}}
+   else if(e.timer<=0&&distance>85&&distance<560){e.warning=.72;e.timer=3.25;say(e);}
+   return;
+ }
  if(e.type==='cleaner'&&e.timer<=0){g.puddles.push({x:e.x-25,y:h.FLOOR-6,w:104,h:12,life:7});e.timer=3.1;say(e);}
  if(e.type==='guard'){if(e.warning>0){e.warning-=dt;if(e.warning<=0)e.dash=.75;}else if(e.dash>0){e.dash-=dt;const nx=e.x-dt*175,safe=g.grounds.some(s=>nx>=s.x+8&&nx+e.w<=s.x+s.w-8),blocked=g.solids.some(s=>nx<s.x+s.w&&nx+e.w>s.x&&e.y+e.h>s.y&&e.y<s.y+s.h);if(safe&&!blocked)e.x=nx;if(e.dash<=0)e.origin=e.x;}else if(e.timer<=0&&distance>130&&distance<460){e.warning=.7;e.timer=4.8;say(e);}}
  if(e.type==='smm'&&e.timer<=0&&distance>95){const sy=e.y+34,a=Math.atan2(p.y+p.h*.55-sy,p.x-e.x);g.enemyBullets.push({x:e.x,y:sy,w:18,h:16,vx:Math.cos(a)*240,vy:Math.sin(a)*240,life:4,rotation:0,kind:'like'});e.timer=2.8;say(e);}
@@ -58,7 +65,14 @@ function drawReward(i){const {round,rect,line,ellipse,text}=h,premium=i.type==='
 function bubble(e){if(e.bubbleTime<=0||!e.bubble)return;const {ctx,round,text}=h,w=Math.min(188,Math.max(118,e.bubble.length*5.5));round(e.w/2-w/2,-56,w,26,7,'#f0eadb','#ffffff88');ctx.fillStyle='#f0eadb';ctx.beginPath();ctx.moveTo(e.w/2-5,-30);ctx.lineTo(e.w/2+2,-23);ctx.lineTo(e.w/2+8,-30);ctx.fill();text(e.bubble,e.w/2,-39,10,'#263540',700,'center');}
 function draw(e,t){
  const {ctx,ellipse,line,round,rect,text}=h,step=Math.sin(e.phase*9),swing=step*5,skin='#e3ad87',shade='#b47f64';ellipse(e.w/2,e.h+2,e.w*.53,5,'#0b192d55');
- if(e.type==='cleaner'){
+ if(e.type==='supportBoss'){
+   const warn=e.warning>0&&Math.floor(e.warning*10)%2===0;ctx.save();ctx.translate(e.w/2,8);ctx.rotate((e.swing||0)>0?-.12+Math.sin((.42-e.swing)/.42*Math.PI)*.18:0);
+   ctx.beginPath();ctx.roundRect(-56,0,112,112,14);ctx.clip();ctx.drawImage(h.assets.boss,-56,0,112,112);ctx.restore();
+   line(42,116,36+swing*.25,144,'#2e3440',10);line(75,116,80-swing*.25,144,'#2e3440',10);round(25+swing*.25,139,27,8,3,'#ece5dc');round(69-swing*.25,139,28,8,3,'#ece5dc');
+   if(e.swing>0){ctx.save();ctx.translate(77,55);ctx.rotate(-.8+Math.sin((.42-e.swing)/.42*Math.PI)*1.45);round(0,-5,72,10,5,'#f080ab','#ffbfd5');round(64,-8,17,16,8,'#ef719f');ctx.restore();}
+   if(warn){ellipse(59,-12,15,15,'#ff9ab6');text('!',59,-6,20,'#50283a',900,'center');}
+   round(9,-36,100,17,5,'#271c2aee','#ff9ab688');text('МИНИ-БОСС',59,-24,9,'#ffc1d5',900,'center');
+ }else if(e.type==='cleaner'){
  line(24,68,22+swing,90,'#344d58',8);line(43,68,45-swing,90,'#344d58',8);round(12+swing,87,18,9,4,'#e7cfab');round(36-swing,87,18,9,4,'#e7cfab');ctx.fillStyle='#4f9696';ctx.beginPath();ctx.moveTo(19,33);ctx.lineTo(47,33);ctx.lineTo(55,75);ctx.lineTo(12,75);ctx.closePath();ctx.fill();round(24,43,19,26,3,'#d4d1a9');round(26,55,15,9,2,'#9cbbaf');ellipse(36,19,15,18,skin);ellipse(48,12,10,9,'#725653');round(20,3,27,8,4,'#c17b9c');line(23,5,42,5,'#edabc2',2);ellipse(45,8,4,5,'#e1a0b7');ellipse(31,19,2,2,'#273842');ellipse(41,19,2,2,'#273842');line(31,29,42,27,shade,2);line(19,41,8,57+step*2,skin,8);line(46,40,59,52+step*3,skin,8);ellipse(7,57,5,6,'#efd581');ellipse(59,53,5,6,'#efd581');line(57,31,73+step*7,89,'#ceb488',4);round(60+step*7,84,28,8,3,'#8999ae');for(let k=0;k<6;k++)line(63+k*4+step*7,90,61+k*5+step*7,98,'#d6e0d5',2);
  }else if(e.type==='guard'){
  line(27,77,25+swing,100,'#203343',13);line(49,77,51-swing,100,'#203343',13);round(13+swing,99,24,9,3,'#15242d');round(40-swing,99,23,9,3,'#15242d');round(13,35,48,46,9,'#415c70','#718797');line(36,36,37,78,'#243b4e',2);rect(15,74,45,6,'#192e3c');round(32,74,11,6,1,'#d7ba71');round(44,45,11,14,2,'#dac778');text('ОХР',49,54,5,'#294657',800,'center');ellipse(38,21,17,19,skin);round(18,4,37,11,4,'#2a4257');round(13,12,46,5,2,'#162e42');ellipse(38,8,4,4,'#dcc679');line(26,21,33,23,'#463a32',2);line(41,23,48,21,'#463a32',2);ellipse(30,25,2,2,'#233440');ellipse(45,25,2,2,'#233440');round(30,31,16,4,2,'#6b4c3e');line(15,42,4,65-swing,'#415c70',11);line(59,43,66,59,'#415c70',11);ellipse(4,67-swing,6,6,skin);ellipse(65,59,6,7,skin);round(58,39,12,21,3,'#1c2e3e');line(65,39,65,29,'#172b3b',3);rect(61,44,6,4,'#a0c3b8');if(e.warning>0||e.dash>0){ellipse(38,-10,12,12,'#ff986d');text('!',38,-4,17,'#412828',900,'center');}
