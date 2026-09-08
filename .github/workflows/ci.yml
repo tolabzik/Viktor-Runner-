@@ -28,6 +28,11 @@ jobs:
           curl --fail --silent http://127.0.0.1:8080/ | grep -q 'VIKTOR RUNNER'
           curl --fail --silent http://127.0.0.1:8080/assets/hero.webp -o /tmp/hero.webp
           test -s /tmp/hero.webp
+          curl --fail --silent http://127.0.0.1:8080/assets/iri-logo.png -o /tmp/iri-logo.png
+          test -s /tmp/iri-logo.png
+          curl --fail --silent http://127.0.0.1:8080/game.js -o /tmp/game.js
+          grep -q 'VIKTOR RUNNER 3.0' /tmp/game.js
+          node --check /tmp/game.js
       - name: Container logs
         if: always()
         run: docker compose logs --no-color
